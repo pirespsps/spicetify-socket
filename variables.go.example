@@ -1,0 +1,4 @@
+package main
+
+var ID = "Your id"
+var Secret = "Your secret"
