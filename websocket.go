@@ -1,25 +1,36 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
 
-func Listener(cmd string) error {
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
-	upgrader := websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
+func WsHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Print("wsHandler error")
 	}
+	defer conn.Close()
 
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		conn, _ := upgrader.Upgrade(w, r, nil)
-		defer conn.Close()
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			fmt.Print("message error")
+			break
+		}
+		fmt.Printf("Received: %s\\n", message)
 
-		conn.WriteJSON(map[string]string{"action": cmd})
-	})
-
-	return http.ListenAndServe(":8080", nil)
+		if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
+			fmt.Print("message write error")
+			break
+		}
+	}
 }

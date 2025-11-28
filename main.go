@@ -1,29 +1,19 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
-	"os"
+	"net/http"
 )
 
 func main() {
 
-	var cmd string
+	http.HandleFunc("/ws", WsHandler)
+	fmt.Printf("Websocket server started on :8080")
 
-	flag.StringVar(&cmd, "cmd", "", "Valid options: current, play, skip, previous, volume")
-	flag.Parse()
-
-	if cmd == "" {
-		fmt.Print("Insert a valid option! -cmd=[option]")
-		os.Exit(1)
-	}
-
-	if err := Listener(cmd); err != nil {
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
-
-	os.Exit(1)
 
 }
