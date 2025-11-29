@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,12 +9,26 @@ import (
 
 func main() {
 
-	http.HandleFunc("/ws", WsHandler)
+	clientSocket()
+
+}
+
+func startServer() {
+	http.HandleFunc("/ws", ServerSocket)
 	fmt.Printf("Websocket server started on :8080")
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func clientSocket() {
+
+	option := flag.String("option", "current", "select an option from [skip,previous,play,current]")
+
+	flag.Parse()
+
+	ClientSocket(*option)
 
 }
