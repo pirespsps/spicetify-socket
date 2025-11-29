@@ -18,29 +18,42 @@ var upgrader = websocket.Upgrader{
 func ServerSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Print("wsHandler error")
+		log.Fatal("wsHandler error: ", err)
 	}
 	defer conn.Close()
 
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Print("message error: ", err)
+			fmt.Printf("message error: %v", err)
 			break
 		}
-		fmt.Printf("Received: %s\\n", message)
+		fmt.Printf("Received: %s \n", message)
+
+		switch string(message) {
+
+		case "current":
+			fmt.Print("current \n")
+		case "previous":
+			fmt.Print("previous \n")
+		case "skip":
+			fmt.Print("skip \n")
+		case "play":
+			fmt.Print("play \n")
+		default:
+			fmt.Print("invalid option \n")
+		}
 
 		//return the message
 		if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
-			fmt.Print("message write error: ", err)
-			break
+			fmt.Printf("message write error: %v \n", err)
 		}
 	}
 }
 
 func ClientSocket(option string) {
 	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws"}
-	fmt.Print("connected to", u)
+	fmt.Printf("connected to %v \n", u)
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -53,10 +66,21 @@ func ClientSocket(option string) {
 		log.Fatal("write message error: ", err)
 	}
 
-	_, message, err := conn.ReadMessage()
-	if err != nil {
-		log.Fatal("connection message received error: ", err)
+	for {
+
+		_, message, err := conn.ReadMessage()
+
+		if err != nil {
+			fmt.Printf("connection message received error: %v \n", err)
+			break
+		}
+
+		if message != nil {
+			//do something
+			fmt.Printf("message received: %v \n", message)
+			break
+		}
+
 	}
 
-	fmt.Print("message: ", message)
 }

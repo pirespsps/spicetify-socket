@@ -15,7 +15,7 @@ func main() {
 
 func startServer() {
 	http.HandleFunc("/ws", ServerSocket)
-	fmt.Printf("Websocket server started on :8080")
+	fmt.Printf("Websocket server started on :8080 \n")
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
