@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,10 +10,17 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var conns = make(map[string]*websocket.Conn)
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+}
+
+type Message struct {
+	Sender  string `json:"sender"`
+	Message string `json:"message"`
 }
 
 func ServerSocket(w http.ResponseWriter, r *http.Request) {
@@ -23,31 +31,36 @@ func ServerSocket(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	for {
-		_, message, err := conn.ReadMessage()
+		_, messageJson, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Printf("message error: %v", err)
 			break
 		}
-		fmt.Printf("Received: %s \n", message)
 
-		switch string(message) {
+		var message Message
+		json.Unmarshal(messageJson, &message)
 
-		case "current":
-			fmt.Print("current \n")
-		case "previous":
-			fmt.Print("previous \n")
-		case "skip":
-			fmt.Print("skip \n")
-		case "play":
-			fmt.Print("play \n")
-		default:
-			fmt.Print("invalid option \n")
+		conns[message.Sender] = conn
+
+		if message.Sender != "spicetify" {
+
+			redirectMsg := Message{
+				Sender:  "server",
+				Message: message.Message,
+			}
+
+			sendMessage("spicetify", redirectMsg)
+
+		} else {
+			if err := conn.WriteJSON(message); err != nil {
+				fmt.Printf("message returning error: %v\n", err)
+			}
 		}
 
 		//return the message
-		if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
-			fmt.Printf("message write error: %v \n", err)
-		}
+		//if err := conn.WriteJSON(message); err != nil {
+		//	fmt.Printf("message write error: %v \n", err)
+		//}
 	}
 }
 
@@ -61,7 +74,12 @@ func ClientSocket(option string) {
 	}
 	defer conn.Close()
 
-	err = conn.WriteMessage(websocket.TextMessage, []byte(option))
+	message := Message{
+		Sender:  "qsbar",
+		Message: option,
+	}
+
+	err = conn.WriteJSON(message)
 	if err != nil {
 		log.Fatal("write message error: ", err)
 	}
@@ -76,11 +94,19 @@ func ClientSocket(option string) {
 		}
 
 		if message != nil {
-			//do something
-			fmt.Printf("message received: %v \n", message)
+			fmt.Printf("message received: %v \n", string(message))
 			break
 		}
 
 	}
 
+}
+
+func sendMessage(conn string, data any) {
+	c := conns[conn]
+	if c == nil {
+		fmt.Print("sender not found: ", conn)
+		return
+	}
+	c.WriteJSON(data)
 }

@@ -25,10 +25,12 @@ func startServer() {
 
 func clientSocket() {
 
-	option := flag.String("option", "current", "select an option from [skip,previous,play,current]")
+	//option := flag.String("option", "current", "select an option from [skip,previous,play,current]")
 
 	flag.Parse()
 
-	ClientSocket(*option)
+	var opt = "play"
+
+	ClientSocket(opt)
 
 }
