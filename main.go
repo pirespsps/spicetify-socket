@@ -10,6 +10,7 @@ import (
 func main() {
 
 	clientSocket()
+	//startServer()
 
 }
 
@@ -29,8 +30,11 @@ func clientSocket() {
 
 	flag.Parse()
 
-	var opt = "play"
+	var opt = "current"
 
+	//data no meio da execucao.....
+
+	FirstConnection()
 	ClientSocket(opt)
 
 }

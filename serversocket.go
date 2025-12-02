@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
-var conns = make(map[string]*websocket.Conn)
+// var conns = make(map[string]*websocket.Conn)
+var conns sync.Map
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -25,49 +26,63 @@ type Message struct {
 func ServerSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Fatal("wsHandler error: ", err)
+		fmt.Printf("wsHandler error: %v", err)
+		return
 	}
 	defer conn.Close()
 
 	for {
 		_, messageJson, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Printf("message error: %v", err)
-			break
+			fmt.Printf("message error: %v\n", err)
+			return
 		}
 
 		var message Message
-		json.Unmarshal(messageJson, &message)
+		err = json.Unmarshal(messageJson, &message)
+		if err != nil {
+			fmt.Printf("message unmarshal error: %v\n", err)
+			return
+		}
 
-		conns[message.Sender] = conn
+		//conns[message.Sender] = conn
+		if _, ok := conns.Load(message.Sender); !ok {
+			fmt.Printf("\nconnection added: %v\n", message.Sender)
+			conns.Store(message.Sender, conn)
+			continue
+		}
 
-		if message.Sender != "spicetify" {
+		redirectMsg := Message{
+			Sender:  "server",
+			Message: message.Message,
+		}
 
-			redirectMsg := Message{
-				Sender:  "server",
-				Message: message.Message,
-			}
+		fmt.Printf("\nsender: %v \nmsg:%v\n", message.Sender, message.Message)
+
+		if message.Sender == "spicetify" {
+
+			sendMessage("qsbar", redirectMsg)
+
+		} else {
 
 			sendMessage("spicetify", redirectMsg)
 
-		} else {
-			if err := conn.WriteJSON(message); err != nil {
-				fmt.Printf("message returning error: %v\n", err)
-			}
 		}
-
-		//return the message
-		//if err := conn.WriteJSON(message); err != nil {
-		//	fmt.Printf("message write error: %v \n", err)
-		//}
 	}
 }
 
 func sendMessage(conn string, data any) {
-	c := conns[conn]
-	if c == nil {
-		fmt.Print("sender not found: ", conn)
+	//c := conns[conn]
+	c, ok := conns.Load(conn)
+	if !ok {
+		fmt.Printf("\nsender not found: %v\n", conn)
 		return
 	}
-	c.WriteJSON(data)
+
+	ws, ok := c.(*websocket.Conn)
+	if !ok {
+		fmt.Printf("type error in conn convertion: %v\n", conn)
+	}
+
+	ws.WriteJSON(data)
 }
