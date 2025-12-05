@@ -1,3 +1,5 @@
+var token = ""
+getAccessToken()
 main();
 
 async function main() {
@@ -64,70 +66,69 @@ async function main() {
 
 }
 
+async function getAccessToken(){
+  const refresh_token = "AQADe7SihJ0PrFqyckmgCJBuak-R0RchrsLk7jxL3es5OQU_jJnSi4olIJ0LS0mfZ06s4eeX-wHgL9LHpcP9fEGwBbyBfx6T4sGq-jF3fQ6c06ucV5u0UUEprpMCK6fJJKM"
 
-function getCurrentPlaying() {
-  const url = "https://accounts.spotify.com/api/token"
+    const u = "https://accounts.spotify.com/api/token"
 
-  let token = "";
+    const body = new URLSearchParams();
+    body.append("grant_type","refresh_token")
+    body.append("refresh_token",refresh_token)
 
-  const data = {
-    grant_type: "client_credentials",
-    client_id: "b498ca8c85ff4c53a454834caf7b5edd",
-    client_secret: "b6da51fec068455da6531798897c7431",
-  }
-
-  fetch(url, {
-    method: "POST",
-    body: data,
-    headers: ["Content-Type","application/x-www-form-urlencoded"],
-  })
-    .then((response) => {
-      console.log(response)
-      token = response.data.access_token
+    let response = await fetch(u,{
+        method:"POST",
+        headers: {
+            "Content-Type" : "application/x-www-form-urlencoded",
+            "Authorization": "Basic " + btoa("b498ca8c85ff4c53a454834caf7b5edd" + ":" + "b6da51fec068455da6531798897c7431")
+        },
+        body
     })
-    .catch((error) => {
-      console.log(error)
-    });
 
-    return token;
+    let data = await response.json();
+
+    token = data.access_token
 }
 
 
-async function currentJson() {
+async function getCurrentPlaying() {
+  if (!token) {
+        console.log("error in access_token:", data);
+        return;
+    }
 
-  let data = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/me/player/currently-playing")
+    const url = "https://api.spotify.com/v1/me/player/currently-playing";
 
-  let track;
-  let album;
-  let artist;
-  let duration;
+    let response = await fetch(url, {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
 
-  if (!data || !data.item) {
+    let json = {}
 
-    data = await SPicetify.CosmosAsync.get("https://api.spotify.com/v1/me/player/recently-played?limit=1")
-    track = data.items[0].name
-    album = data.items[0].album.images[0].url
-    artist = data.items[0].artists[0].name
-    duration = data.items[0].duration_ms
+    try{
+        let track = await response.json();
 
-  } else {
+        json = {
+        name: track.item.name,
+        band: track.item.artists[0].name,
+        image: track.item.album.images[0].url,
+        duration: track.item.duration_ms
+    }
 
-    track = data.item.name
-    album = data.item.album.images[0].url
-    artist = data.item.artists[0].name
-    duration = data.item.duration_ms
+    }catch(error){
 
-  }
+        json = {
+            name: "Not playing anything!",
+            band: "Spotify",
+            image: "n/a",
+            duration: 111111
+        }
+    }
 
-  const obj = {
-    track: track,
-    album: album,
-    artist: artist,
-    duration: duration
-  }
+    console.log(json)
 
-  return {
-    sender: "spicetify",
-    message: JSON.stringify(obj)
-  }
+    return {
+      sender: "spicetify",
+      message: JSON.stringify(json)
+    }
 }
