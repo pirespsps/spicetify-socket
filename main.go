@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +8,7 @@ import (
 
 func main() {
 
-	clientSocket()
+	ClientSocket()
 	//startServer()
 
 }
@@ -22,19 +21,4 @@ func startServer() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func clientSocket() {
-
-	//option := flag.String("option", "current", "select an option from [skip,previous,play,current]")
-
-	flag.Parse()
-
-	var opt = "current"
-
-	//data no meio da execucao.....
-
-	FirstConnection()
-	ClientSocket(opt)
-
 }

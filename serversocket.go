@@ -45,26 +45,33 @@ func ServerSocket(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if _, ok := conns.Load(message.Sender); !ok {
-			fmt.Printf("\n==================connection added: %v==================\n", message.Sender)
+			fmt.Printf("\n================== connection added: %v ==================\n", message.Sender)
 			conns.Store(message.Sender, conn)
 			continue
+		} else if c, _ := conns.Load(message.Sender); c != conn {
+			conns.Store(message.Sender, conn)
 		}
 
-		redirectMsg := Message{
-			Sender:  "server",
-			Message: message.Message,
-		}
+		redirectMessageHandler(&message)
+	}
+}
 
-		fmt.Printf("\nsender: %v  -- msg:%v\n", message.Sender, message.Message)
+func redirectMessageHandler(message *Message) {
 
-		if message.Sender == "spicetify" {
+	redirectMsg := Message{
+		Sender:  "server",
+		Message: message.Message,
+	}
 
-			sendMessage("qsbar", redirectMsg)
+	fmt.Printf("\nsender: %v -- msg:%v\n", message.Sender, message.Message)
 
-		} else {
+	if message.Sender == "spicetify" {
 
-			sendMessage("spicetify", redirectMsg)
-		}
+		sendMessage("qsbar", redirectMsg)
+
+	} else {
+
+		sendMessage("spicetify", redirectMsg)
 	}
 }
 

@@ -8,9 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func FirstConnection() {
+func ClientSocket() {
 	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws"}
-	fmt.Printf("connected to %v \n", u)
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -18,48 +17,57 @@ func FirstConnection() {
 	}
 	defer conn.Close()
 
-	message := Message{
+	initialMessage := Message{
 		Sender:  "qsbar",
 		Message: "",
 	}
 
-	err = conn.WriteJSON(message)
+	err = conn.WriteJSON(initialMessage)
 	if err != nil {
 		log.Fatal("write message error: ", err)
-	}
-}
-
-func ClientSocket(option string) {
-	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws"}
-
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		log.Fatal("connection error: ", err)
-	}
-	defer conn.Close()
-
-	message := Message{
-		Sender:  "qsbar",
-		Message: option,
+	} else {
+		fmt.Printf("connected to %v \n\n", u)
 	}
 
-	err = conn.WriteJSON(message)
-	if err != nil {
-		log.Fatal("write message error: ", err)
-	}
+	var option string
+
+	go func() {
+		for {
+			_, err := fmt.Scan(&option)
+
+			if err != nil {
+				fmt.Printf("error in scanning command: %v\n", err)
+			}
+
+			if option != "" {
+				sendCommand(option, conn)
+			}
+		}
+	}()
 
 	for {
 
 		var msg Message
-		//_, message, err := conn.ReadMessage()
 		err := conn.ReadJSON(&msg)
 		if err != nil {
 			fmt.Print("error in server json")
 		}
 
 		if msg.Sender != "" {
-			fmt.Printf("sender: %v -- message: %v\n", msg.Sender, msg.Message)
+			fmt.Print(msg.Message)
 		}
 	}
 
+}
+
+func sendCommand(opt string, c *websocket.Conn) {
+
+	err := c.WriteJSON(Message{
+		Sender:  "qsbar",
+		Message: opt,
+	})
+
+	if err != nil {
+		log.Fatal("error in sending option: ", err)
+	}
 }

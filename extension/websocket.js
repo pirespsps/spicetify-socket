@@ -1,5 +1,8 @@
 var token = ""
+
 getAccessToken()
+setInterval(getAccessToken,3000000)
+
 main();
 
 async function main() {
@@ -7,7 +10,7 @@ async function main() {
   Spicetify.Player.addEventListener("songchange", () => {
     setTimeout(async () => {
       ws.send(JSON.stringify(await getCurrentPlaying()))
-    },2500)
+    },1500)
   });
 
   setTimeout(() => {
@@ -27,7 +30,6 @@ async function main() {
     setTimeout(async () => {
       ws.send(JSON.stringify(await getCurrentPlaying()))
     }, 3000)
-
   };
 
   ws.onmessage = async (event) => {
@@ -53,11 +55,9 @@ async function main() {
 
     if (msg.message === "next") {
       Spicetify.Player.next()
-      ws.send(JSON.stringify(await getCurrentPlaying()))
     }
     if (msg.message === "previous") {
       Spicetify.Player.back()
-      ws.send(JSON.stringify(await getCurrentPlaying()))
     };
     if (msg.message == "current") {
       ws.send(JSON.stringify(await getCurrentPlaying()))
