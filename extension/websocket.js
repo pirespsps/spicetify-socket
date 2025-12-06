@@ -4,11 +4,15 @@ main();
 
 async function main() {
 
-  getCurrentPlaying()
+  Spicetify.Player.addEventListener("songchange", () => {
+    setTimeout(async () => {
+      ws.send(JSON.stringify(await getCurrentPlaying()))
+    },2500)
+  });
 
   setTimeout(() => {
     Spicetify.Player.play()
-  }, 5000)
+  }, 3000)
 
   const ws = new WebSocket("ws://localhost:8080/ws");
 
@@ -21,14 +25,10 @@ async function main() {
     }))
 
     setTimeout(async () => {
-      ws.send(JSON.stringify(await currentJson()))
+      ws.send(JSON.stringify(await getCurrentPlaying()))
     }, 3000)
 
   };
-
-  Spicetify.Player.addEventListener("songchange", (event) => {
-    ws.send(JSON.stringify(currentJson()))
-  });
 
   ws.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
@@ -53,14 +53,14 @@ async function main() {
 
     if (msg.message === "next") {
       Spicetify.Player.next()
-      ws.send(JSON.stringify(currentJson()))
+      ws.send(JSON.stringify(await getCurrentPlaying()))
     }
     if (msg.message === "previous") {
       Spicetify.Player.back()
-      ws.send(JSON.stringify(currentJson()))
+      ws.send(JSON.stringify(await getCurrentPlaying()))
     };
     if (msg.message == "current") {
-      ws.send(JSON.stringify(currentJson()))
+      ws.send(JSON.stringify(await getCurrentPlaying()))
     }
   };
 
@@ -92,7 +92,7 @@ async function getAccessToken(){
 
 async function getCurrentPlaying() {
   if (!token) {
-        console.log("error in access_token:", data);
+        console.log("error in access_token:");
         return;
     }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// var conns = make(map[string]*websocket.Conn)
 var conns sync.Map
 
 var upgrader = websocket.Upgrader{
@@ -45,9 +44,8 @@ func ServerSocket(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		//conns[message.Sender] = conn
 		if _, ok := conns.Load(message.Sender); !ok {
-			fmt.Printf("\nconnection added: %v\n", message.Sender)
+			fmt.Printf("\n==================connection added: %v==================\n", message.Sender)
 			conns.Store(message.Sender, conn)
 			continue
 		}
@@ -57,7 +55,7 @@ func ServerSocket(w http.ResponseWriter, r *http.Request) {
 			Message: message.Message,
 		}
 
-		fmt.Printf("\nsender: %v \nmsg:%v\n", message.Sender, message.Message)
+		fmt.Printf("\nsender: %v  -- msg:%v\n", message.Sender, message.Message)
 
 		if message.Sender == "spicetify" {
 
@@ -66,13 +64,11 @@ func ServerSocket(w http.ResponseWriter, r *http.Request) {
 		} else {
 
 			sendMessage("spicetify", redirectMsg)
-
 		}
 	}
 }
 
 func sendMessage(conn string, data any) {
-	//c := conns[conn]
 	c, ok := conns.Load(conn)
 	if !ok {
 		fmt.Printf("\nsender not found: %v\n", conn)

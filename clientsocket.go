@@ -50,17 +50,16 @@ func ClientSocket(option string) {
 
 	for {
 
-		_, message, err := conn.ReadMessage()
-
+		var msg Message
+		//_, message, err := conn.ReadMessage()
+		err := conn.ReadJSON(&msg)
 		if err != nil {
-			fmt.Printf("connection message received error: %v \n", err)
-			break
+			fmt.Print("error in server json")
 		}
 
-		if message != nil {
-			fmt.Printf("message received: %v \n", string(message))
+		if msg.Sender != "" {
+			fmt.Printf("sender: %v -- message: %v\n", msg.Sender, msg.Message)
 		}
-
 	}
 
 }
