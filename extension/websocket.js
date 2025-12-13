@@ -62,6 +62,12 @@ async function main() {
     if (msg.message == "current") {
       ws.send(JSON.stringify(await getCurrentPlaying()))
     }
+    if(msg.message.startsWith("volume")){
+      let char = msg.message.indexOf("-")
+      let vol = msg.message[char+1] + "" + msg.message[char+2]
+
+      Spicetify.Player.setVolume(vol/100)
+    }
   };
 
 }
@@ -112,7 +118,10 @@ async function getCurrentPlaying() {
         name: track.item.name,
         band: track.item.artists[0].name,
         image: track.item.album.images[0].url,
-        duration: track.item.duration_ms
+        duration: track.item.duration_ms,
+        //
+        //info about the player....
+        volume: Spicetify.Player.getVolume()
     }
 
     }catch(error){
